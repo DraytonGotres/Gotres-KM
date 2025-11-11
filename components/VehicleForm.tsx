@@ -35,19 +35,20 @@ export default function VehicleForm({ onClose, onSuccess }: VehicleFormProps) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-800 rounded-2xl shadow-2xl max-w-2xl w-full border border-white/10">
-        <div className="flex justify-between items-center p-6 border-b border-white/10">
-          <h3 className="text-2xl font-bold text-white">Cadastrar Veículo</h3>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-slate-800 rounded-2xl shadow-2xl max-w-2xl w-full border border-white/10 my-8 max-h-[90vh] flex flex-col">
+        <div className="flex justify-between items-center p-4 md:p-6 border-b border-white/10 flex-shrink-0">
+          <h3 className="text-lg md:text-2xl font-bold text-white">Cadastrar Veículo</h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="text-gray-400 hover:text-white transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2"
+            aria-label="Fechar"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-4 overflow-y-auto flex-1">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-blue-200 mb-2">
@@ -128,18 +129,18 @@ export default function VehicleForm({ onClose, onSuccess }: VehicleFormProps) {
             </div>
           </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-col sm:flex-row gap-3 pt-4 sticky bottom-0 bg-slate-800 -mx-4 md:-mx-6 px-4 md:px-6 pb-4 md:pb-6 border-t border-white/10 mt-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-all"
+              className="flex-1 px-6 py-3 bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-white rounded-lg font-medium transition-all touch-manipulation min-h-[44px]"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-all shadow-lg shadow-blue-500/50 disabled:opacity-50"
+              className="flex-1 px-6 py-3 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-lg shadow-blue-500/50 disabled:opacity-50 touch-manipulation min-h-[44px]"
             >
               {loading ? 'Salvando...' : 'Cadastrar'}
             </button>
