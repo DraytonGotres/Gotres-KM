@@ -9,6 +9,7 @@ import MaintenanceList from '@/components/MaintenanceList'
 import Reports from '@/components/Reports'
 import InstallPWA from '@/components/InstallPWA'
 import InstallButton from '@/components/InstallButton'
+import UpdateNotification from '@/components/UpdateNotification'
 import { supabase, type Vehicle } from '@/lib/supabase'
 
 export default function Home() {
@@ -156,6 +157,9 @@ export default function Home() {
 
       {/* Prompt de Instalação PWA */}
       <InstallPWA />
+      
+      {/* Notificação de Atualização */}
+      <UpdateNotification />
     </div>
   )
 }

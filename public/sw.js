@@ -1,5 +1,5 @@
-// Service Worker para PWA
-const CACHE_NAME = 'gotres-km-v1'
+// Service Worker para PWA com auto-update
+const CACHE_NAME = 'gotres-km-v2' // Incrementar versão para forçar atualização
 const urlsToCache = [
   '/',
   '/manifest.json',
@@ -8,6 +8,9 @@ const urlsToCache = [
 
 // Instalação do Service Worker
 self.addEventListener('install', (event) => {
+  // Força o service worker a ativar imediatamente
+  self.skipWaiting()
+  
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(urlsToCache))
@@ -25,6 +28,9 @@ self.addEventListener('activate', (event) => {
           }
         })
       )
+    }).then(() => {
+      // Toma controle de todas as páginas imediatamente
+      return self.clients.claim()
     })
   )
 })
@@ -38,4 +44,11 @@ self.addEventListener('fetch', (event) => {
         return response || fetch(event.request)
       })
   )
+})
+
+// Escutar mensagem para pular espera
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting()
+  }
 })
