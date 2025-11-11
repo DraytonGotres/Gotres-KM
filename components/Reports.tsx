@@ -270,8 +270,8 @@ export default function Reports({ vehicles }: ReportsProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-white">Relatórios e Análises</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl md:text-2xl font-bold text-white">Relatórios e Análises</h2>
       </div>
 
       {/* Filtros de Período */}
