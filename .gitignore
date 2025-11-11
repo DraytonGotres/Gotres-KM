@@ -48,3 +48,4 @@ supabase-migration-add-price.sql
 supabase-setup.sql
 PUSH-GITHUB.md
 DEPLOY-VERCEL.md
+CRIAR-FAVICON.md
