@@ -1,0 +1,55 @@
+🎨 COMO CRIAR OS ÍCONES DO PWA - GOTRES-KM
+
+OPÇÃO MAIS RÁPIDA (2 minutos):
+================================
+
+1. Acesse: https://favicon.io/favicon-converter/
+
+2. Faça upload da sua logo GOTRES (logo.png)
+
+3. Clique em "Download"
+
+4. Extraia o arquivo baixado
+
+5. Copie estes arquivos para a pasta public/:
+   - android-chrome-192x192.png → renomeie para icon-192.png
+   - android-chrome-512x512.png → renomeie para icon-512.png
+
+6. Pronto! Os erros vão sumir.
+
+
+ALTERNATIVA - Usar Canva (5 minutos):
+======================================
+
+1. Acesse: https://www.canva.com
+
+2. Crie um design 512x512px
+
+3. Faça upload da sua logo GOTRES
+
+4. Centralize e ajuste o tamanho
+
+5. Baixe como PNG
+
+6. Renomeie para icon-512.png
+
+7. Redimensione para 192x192px e salve como icon-192.png
+
+8. Coloque ambos na pasta public/
+
+
+POR QUE PRECISA DESSES ÍCONES?
+===============================
+
+- icon-192.png: Usado no Android quando instala o app
+- icon-512.png: Usado para splash screen e ícone de alta qualidade
+- Sem eles, o PWA não instala corretamente no celular
+
+
+TEMPORÁRIO:
+===========
+
+Por enquanto, o sistema está usando logo.png para ambos.
+Funciona, mas não é otimizado.
+
+Crie os ícones corretos quando puder! 🚀
