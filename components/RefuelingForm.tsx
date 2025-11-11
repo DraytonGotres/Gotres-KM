@@ -109,17 +109,18 @@ export default function RefuelingForm({ vehicles, editingRefueling, onClose, onS
   const costPerKm = kmDriven > 0 ? formData.cost / kmDriven : 0
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 overflow-y-auto">
-      <div className="min-h-screen flex items-center justify-center p-4 py-8">
-        <div className="bg-slate-800 rounded-2xl shadow-2xl max-w-2xl w-full border border-white/10">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className="min-h-screen flex items-start sm:items-center justify-center p-4 py-8">
+        <div className="bg-slate-800 rounded-2xl shadow-2xl max-w-2xl w-full border border-white/10 mb-8">
           {/* Header */}
-          <div className="flex justify-between items-center p-4 md:p-6 border-b border-white/10 sticky top-0 bg-slate-800 z-10 rounded-t-2xl">
-            <h3 className="text-lg md:text-2xl font-bold text-white">
-              {editingRefueling ? 'Editar Abastecimento' : 'Registrar Abastecimento'}
+          <div className="flex justify-between items-center p-4 md:p-6 border-b border-white/10 bg-slate-800 rounded-t-2xl">
+            <h3 className="text-base md:text-2xl font-bold text-white">
+              {editingRefueling ? 'Editar' : 'Registrar'} Abastecimento
             </h3>
             <button 
               onClick={onClose} 
-              className="text-gray-400 hover:text-white transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2"
+              type="button"
+              className="text-gray-400 hover:text-white active:text-white transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2"
               aria-label="Fechar"
             >
               <X className="w-6 h-6" />
@@ -127,7 +128,7 @@ export default function RefuelingForm({ vehicles, editingRefueling, onClose, onS
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-4">
+          <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-4" autoComplete="off">
             {/* Veículo */}
             <div>
               <label className="block text-sm font-medium text-blue-200 mb-2">
@@ -300,18 +301,18 @@ export default function RefuelingForm({ vehicles, editingRefueling, onClose, onS
             )}
 
             {/* Botões */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-white/10 mt-6">
+            <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-white/10 mt-6 pb-safe">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-6 py-3 bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-white rounded-lg font-medium transition-all touch-manipulation min-h-[48px]"
+                className="order-2 sm:order-1 flex-1 px-6 py-3 bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-white rounded-lg font-medium transition-all touch-manipulation min-h-[52px] text-base"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 px-6 py-3 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-lg shadow-blue-500/50 disabled:opacity-50 touch-manipulation min-h-[48px]"
+                className="order-1 sm:order-2 flex-1 px-6 py-3 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-lg shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[52px] text-base"
               >
                 {loading ? 'Salvando...' : (editingRefueling ? 'Atualizar' : 'Registrar')}
               </button>
