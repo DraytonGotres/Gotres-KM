@@ -81,10 +81,10 @@ export default function RefuelingList({ vehicles }: RefuelingListProps) {
         <h2 className="text-xl md:text-2xl font-bold text-white">Abastecimentos</h2>
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-lg font-medium transition-all shadow-lg shadow-blue-500/50 text-sm md:text-base w-full sm:w-auto justify-center"
+          className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white px-4 md:px-6 py-3 md:py-3 rounded-lg font-medium transition-all shadow-lg shadow-blue-500/50 text-sm md:text-base w-full sm:w-auto justify-center touch-manipulation min-h-[44px]"
         >
-          <Plus className="w-4 h-4 md:w-5 md:h-5" />
-          <span className="hidden xs:inline">Registrar</span> Abastecimento
+          <Plus className="w-5 h-5 md:w-5 md:h-5" />
+          Registrar Abastecimento
         </button>
       </div>
 
@@ -111,27 +111,29 @@ export default function RefuelingList({ vehicles }: RefuelingListProps) {
               key={refueling.id}
               className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-blue-500/50 transition-all"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-bold text-white mb-1">
+              <div className="flex items-start justify-between mb-4 gap-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base md:text-lg font-bold text-white mb-1 truncate">
                     {getVehicleInfo(refueling.vehicle_id)}
                   </h3>
                   <p className="text-sm text-gray-400">
                     {format(new Date(refueling.date + 'T12:00:00'), 'dd-MM-yyyy')}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <button
                     onClick={() => handleEdit(refueling)}
-                    className="bg-blue-500/20 hover:bg-blue-500/30 p-3 rounded-xl transition-colors"
+                    className="bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 p-2.5 md:p-3 rounded-xl transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
                     title="Editar"
+                    aria-label="Editar abastecimento"
                   >
                     <Edit2 className="w-5 h-5 text-blue-400" />
                   </button>
                   <button
                     onClick={() => handleDelete(refueling.id)}
-                    className="bg-red-500/20 hover:bg-red-500/30 p-3 rounded-xl transition-colors"
+                    className="bg-red-500/20 hover:bg-red-500/30 active:bg-red-500/40 p-2.5 md:p-3 rounded-xl transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
                     title="Excluir"
+                    aria-label="Excluir abastecimento"
                   >
                     <Trash2 className="w-5 h-5 text-red-400" />
                   </button>
