@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
-import { supabase, type Vehicle } from '@/lib/supabase'
+import { supabase, type Vehicle, type Maintenance } from '@/lib/supabase'
 
 interface MaintenanceFormProps {
   vehicles: Vehicle[]
+  editingMaintenance?: Maintenance | null
   onClose: () => void
   onSuccess: () => void
 }
@@ -28,7 +29,7 @@ const maintenanceTypes = [
   'Outros',
 ]
 
-export default function MaintenanceForm({ vehicles, onClose, onSuccess }: MaintenanceFormProps) {
+export default function MaintenanceForm({ vehicles, editingMaintenance, onClose, onSuccess }: MaintenanceFormProps) {
   const [formData, setFormData] = useState({
     vehicle_id: '',
     date: new Date().toISOString().split('T')[0],
@@ -39,14 +40,37 @@ export default function MaintenanceForm({ vehicles, onClose, onSuccess }: Mainte
   })
   const [loading, setLoading] = useState(false)
 
+  useEffect(() => {
+    if (editingMaintenance) {
+      setFormData({
+        vehicle_id: editingMaintenance.vehicle_id,
+        date: editingMaintenance.date,
+        type: editingMaintenance.type,
+        description: editingMaintenance.description,
+        cost: editingMaintenance.cost,
+        km_at_maintenance: editingMaintenance.km_at_maintenance,
+      })
+    }
+  }, [editingMaintenance])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
-    const { error } = await supabase.from('maintenances').insert([formData])
+    let error
+    if (editingMaintenance) {
+      const { error: updateError } = await supabase
+        .from('maintenances')
+        .update(formData)
+        .eq('id', editingMaintenance.id)
+      error = updateError
+    } else {
+      const { error: insertError } = await supabase.from('maintenances').insert([formData])
+      error = insertError
+    }
 
     if (error) {
-      alert('Erro ao registrar manutenção: ' + error.message)
+      alert(`Erro ao ${editingMaintenance ? 'atualizar' : 'registrar'} manutenção: ` + error.message)
     } else {
       onSuccess()
     }
@@ -58,7 +82,9 @@ export default function MaintenanceForm({ vehicles, onClose, onSuccess }: Mainte
       <div className="min-h-screen flex items-center justify-center p-4 py-8">
         <div className="bg-slate-800 rounded-2xl shadow-2xl max-w-2xl w-full border border-white/10">
           <div className="flex justify-between items-center p-4 md:p-6 border-b border-white/10 sticky top-0 bg-slate-800 z-10 rounded-t-2xl">
-            <h3 className="text-lg md:text-2xl font-bold text-white">Registrar Manutenção</h3>
+            <h3 className="text-lg md:text-2xl font-bold text-white">
+              {editingMaintenance ? 'Editar Manutenção' : 'Registrar Manutenção'}
+            </h3>
             <button 
               onClick={onClose} 
               className="text-gray-400 hover:text-white transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2"
@@ -177,7 +203,7 @@ export default function MaintenanceForm({ vehicles, onClose, onSuccess }: Mainte
                 disabled={loading}
                 className="flex-1 px-6 py-3 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-lg shadow-blue-500/50 disabled:opacity-50 touch-manipulation min-h-[48px]"
               >
-                {loading ? 'Salvando...' : 'Registrar'}
+                {loading ? 'Salvando...' : (editingMaintenance ? 'Atualizar' : 'Registrar')}
               </button>
             </div>
           </form>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Wrench } from 'lucide-react'
+import { Plus, Wrench, Edit2, Trash2 } from 'lucide-react'
 import { supabase, type Vehicle, type Maintenance } from '@/lib/supabase'
 import MaintenanceForm from './MaintenanceForm'
 import { format } from 'date-fns'
@@ -14,6 +14,7 @@ interface MaintenanceListProps {
 export default function MaintenanceList({ vehicles }: MaintenanceListProps) {
   const [maintenances, setMaintenances] = useState<Maintenance[]>([])
   const [showForm, setShowForm] = useState(false)
+  const [editingMaintenance, setEditingMaintenance] = useState<Maintenance | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -38,7 +39,30 @@ export default function MaintenanceList({ vehicles }: MaintenanceListProps) {
 
   const handleSuccess = () => {
     setShowForm(false)
+    setEditingMaintenance(null)
     loadMaintenances()
+  }
+
+  const handleEdit = (maintenance: Maintenance) => {
+    setEditingMaintenance(maintenance)
+    setShowForm(true)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta manutenção?')) return
+
+    const { error } = await supabase.from('maintenances').delete().eq('id', id)
+    
+    if (error) {
+      alert('Erro ao excluir manutenção: ' + error.message)
+    } else {
+      loadMaintenances()
+    }
+  }
+
+  const handleCloseForm = () => {
+    setShowForm(false)
+    setEditingMaintenance(null)
   }
 
   if (vehicles.length === 0) {
@@ -67,7 +91,8 @@ export default function MaintenanceList({ vehicles }: MaintenanceListProps) {
       {showForm && (
         <MaintenanceForm
           vehicles={vehicles}
-          onClose={() => setShowForm(false)}
+          editingMaintenance={editingMaintenance}
+          onClose={handleCloseForm}
           onSuccess={handleSuccess}
         />
       )}
@@ -86,17 +111,32 @@ export default function MaintenanceList({ vehicles }: MaintenanceListProps) {
               key={maintenance.id}
               className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-blue-500/50 transition-all"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-bold text-white mb-1">
+              <div className="flex items-start justify-between mb-4 gap-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base md:text-lg font-bold text-white mb-1 truncate">
                     {getVehicleInfo(maintenance.vehicle_id)}
                   </h3>
                   <p className="text-sm text-gray-400">
                     {format(new Date(maintenance.date + 'T12:00:00'), 'dd-MM-yyyy')}
                   </p>
                 </div>
-                <div className="bg-orange-500/20 p-3 rounded-xl">
-                  <Wrench className="w-6 h-6 text-orange-400" />
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => handleEdit(maintenance)}
+                    className="bg-blue-500/20 hover:bg-blue-500/30 active:bg-blue-500/40 p-2.5 md:p-3 rounded-xl transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
+                    title="Editar"
+                    aria-label="Editar manutenção"
+                  >
+                    <Edit2 className="w-5 h-5 text-blue-400" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(maintenance.id)}
+                    className="bg-red-500/20 hover:bg-red-500/30 active:bg-red-500/40 p-2.5 md:p-3 rounded-xl transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
+                    title="Excluir"
+                    aria-label="Excluir manutenção"
+                  >
+                    <Trash2 className="w-5 h-5 text-red-400" />
+                  </button>
                 </div>
               </div>
 
