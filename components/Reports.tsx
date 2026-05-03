@@ -299,18 +299,18 @@ export default function Reports({ vehicles }: ReportsProps) {
   // Renderizar Dossiê Digital
   if (showDossier && selectedVehicleId !== 'all' && selectedVehicle) {
     return (
-      <div className="print-container bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
+      <div className="print-container bg-slate-800/50 backdrop-blur-sm rounded-2xl p-4 md:p-8 border border-white/10">
         {/* Botões de Ação - Não imprime */}
-        <div className="no-print flex justify-between items-center mb-6">
+        <div className="no-print flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center mb-6">
           <button
             onClick={() => setShowDossier(false)}
-            className="flex items-center gap-2 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-all"
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-all w-full sm:w-auto order-2 sm:order-1"
           >
             ← Voltar aos Relatórios
           </button>
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-all shadow-lg shadow-blue-500/50"
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-all shadow-lg shadow-blue-500/50 w-full sm:w-auto order-1 sm:order-2"
           >
             <Printer className="w-5 h-5" />
             Imprimir Dossiê
@@ -318,43 +318,43 @@ export default function Reports({ vehicles }: ReportsProps) {
         </div>
 
         {/* Cabeçalho do Dossiê */}
-        <div className="print-header border-b-2 border-blue-500/30 pb-6 mb-6">
-          <div className="flex justify-between items-start gap-6">
+        <div className="print-header border-b-2 border-blue-500/30 pb-4 md:pb-6 mb-4 md:mb-6">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 md:gap-6">
             <div className="flex-1">
-              <div className="flex items-center gap-4 mb-4">
-                <img src="/logo.png" alt="GOTRES-KM" className="h-16 w-auto" />
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-4">
+                <img src="/logo.png" alt="GOTRES-KM" className="h-12 sm:h-14 md:h-16 w-auto" />
                 <div>
-                  <h1 className="text-3xl font-bold text-white">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white leading-tight">
                     DOSSIÊ DIGITAL DE MANUTENÇÕES
                   </h1>
-                  <p className="text-blue-300 mt-1">
+                  <p className="text-blue-300 mt-1 text-xs sm:text-sm">
                     Sistema GOTRES-KM - Gestão de Frota
                   </p>
                 </div>
               </div>
 
-              <div className="vehicle-info-box grid grid-cols-2 gap-4 mt-6 bg-blue-500/10 p-4 rounded-lg">
+              <div className="vehicle-info-box grid grid-cols-2 gap-3 md:gap-4 mt-4 md:mt-6 bg-blue-500/10 p-3 md:p-4 rounded-lg">
                 <div>
-                  <p className="vehicle-info-label text-sm text-blue-300 mb-1">Veículo</p>
-                  <p className="vehicle-info-value text-lg font-bold text-white">
+                  <p className="vehicle-info-label text-xs text-blue-300 mb-1">Veículo</p>
+                  <p className="vehicle-info-value text-sm md:text-lg font-bold text-white break-words">
                     {selectedVehicle.manufacturer} {selectedVehicle.model}
                   </p>
                 </div>
                 <div>
-                  <p className="vehicle-info-label text-sm text-blue-300 mb-1">Placa</p>
-                  <p className="vehicle-info-value text-lg font-bold text-white">
+                  <p className="vehicle-info-label text-xs text-blue-300 mb-1">Placa</p>
+                  <p className="vehicle-info-value text-sm md:text-lg font-bold text-white">
                     {selectedVehicle.plate}
                   </p>
                 </div>
                 <div>
-                  <p className="vehicle-info-label text-sm text-blue-300 mb-1">Ano</p>
-                  <p className="vehicle-info-value text-lg font-bold text-white">
+                  <p className="vehicle-info-label text-xs text-blue-300 mb-1">Ano</p>
+                  <p className="vehicle-info-value text-sm md:text-lg font-bold text-white">
                     {selectedVehicle.year}
                   </p>
                 </div>
                 <div>
-                  <p className="vehicle-info-label text-sm text-blue-300 mb-1">Cor</p>
-                  <p className="vehicle-info-value text-lg font-bold text-white">
+                  <p className="vehicle-info-label text-xs text-blue-300 mb-1">Cor</p>
+                  <p className="vehicle-info-value text-sm md:text-lg font-bold text-white">
                     {selectedVehicle.color}
                   </p>
                 </div>
@@ -362,7 +362,7 @@ export default function Reports({ vehicles }: ReportsProps) {
             </div>
 
             {/* QR Code de Autenticidade */}
-            <div className="print-qr bg-white p-4 rounded-xl border-2 border-blue-500/50">
+            <div className="print-qr bg-white p-3 md:p-4 rounded-xl border-2 border-blue-500/50 mx-auto md:mx-0 flex-shrink-0">
               <QRCodeSVG 
                 value={systemUrl}
                 size={100}
@@ -376,8 +376,8 @@ export default function Reports({ vehicles }: ReportsProps) {
           </div>
 
           {/* Período do Relatório */}
-          <div className="period-info mt-6 bg-slate-700/50 p-4 rounded-lg">
-            <p className="text-sm text-blue-300">
+          <div className="period-info mt-4 md:mt-6 bg-slate-700/50 p-3 md:p-4 rounded-lg">
+            <p className="text-xs sm:text-sm text-blue-300">
               <strong>Período:</strong>{' '}
               {periodType === 'custom' && startDate && endDate
                 ? `${format(parseISO(startDate), 'dd/MM/yyyy')} até ${format(parseISO(endDate), 'dd/MM/yyyy')}`
@@ -393,15 +393,15 @@ export default function Reports({ vehicles }: ReportsProps) {
 
         {/* Lista Cronológica de Manutenções */}
         <div>
-          <h2 className="section-title text-2xl font-bold text-white mb-4 flex items-center gap-2">
-            <FileText className="w-6 h-6" />
+          <h2 className="section-title text-lg sm:text-xl md:text-2xl font-bold text-white mb-3 md:mb-4 flex items-center gap-2">
+            <FileText className="w-5 h-5 md:w-6 md:h-6" />
             Histórico de Manutenções
           </h2>
 
           {filteredMaintenances.length === 0 ? (
-            <div className="bg-slate-700/50 rounded-xl p-8 text-center">
-              <Wrench className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-400">
+            <div className="bg-slate-700/50 rounded-xl p-6 md:p-8 text-center">
+              <Wrench className="w-10 h-10 md:w-12 md:h-12 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-400 text-sm md:text-base">
                 Nenhuma manutenção registrada no período selecionado
               </p>
             </div>
@@ -410,41 +410,41 @@ export default function Reports({ vehicles }: ReportsProps) {
               {filteredMaintenances.map((maintenance, index) => (
                 <div
                   key={maintenance.id}
-                  className="maintenance-item bg-slate-700/30 border border-white/10 rounded-xl p-6 mb-4 hover:border-blue-500/50 transition-all"
+                  className="maintenance-item bg-slate-700/30 border border-white/10 rounded-xl p-4 md:p-6 mb-3 md:mb-4 hover:border-blue-500/50 transition-all"
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-4 flex-1">
+                  <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+                    <div className="flex items-start gap-3 sm:gap-4 flex-1 w-full">
                       {/* Ícone da Categoria */}
-                      <div className="maintenance-icon text-4xl">{getMaintenanceIcon(maintenance.type)}</div>
+                      <div className="maintenance-icon text-3xl sm:text-4xl flex-shrink-0">{getMaintenanceIcon(maintenance.type)}</div>
 
                       {/* Informações */}
-                      <div className="flex-1">
-                        <div className="maintenance-meta flex items-center gap-3 mb-2">
-                          <span className="text-sm font-medium text-blue-400">
+                      <div className="flex-1 min-w-0">
+                        <div className="maintenance-meta flex flex-wrap items-center gap-2 mb-2">
+                          <span className="text-xs sm:text-sm font-medium text-blue-400">
                             #{String(filteredMaintenances.length - index).padStart(3, '0')}
                           </span>
-                          <span className="text-sm text-gray-400">
+                          <span className="text-xs sm:text-sm text-gray-400">
                             {format(parseISO(maintenance.date + 'T12:00:00'), 'dd/MM/yyyy')}
                           </span>
-                          <span className="text-sm text-gray-400">
+                          <span className="text-xs sm:text-sm text-gray-400">
                             • {maintenance.km_at_maintenance.toLocaleString('pt-BR')} km
                           </span>
                         </div>
 
-                        <h3 className="text-lg font-bold text-white mb-2">
+                        <h3 className="text-base sm:text-lg font-bold text-white mb-2 break-words">
                           {maintenance.type}
                         </h3>
 
-                        <p className="text-gray-300 text-sm leading-relaxed">
+                        <p className="text-gray-300 text-xs sm:text-sm leading-relaxed break-words">
                           {maintenance.description}
                         </p>
                       </div>
                     </div>
 
                     {/* Valor */}
-                    <div className="text-right">
+                    <div className="text-left sm:text-right w-full sm:w-auto flex-shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/10">
                       <p className="maintenance-cost-label text-xs text-gray-400 mb-1">Custo</p>
-                      <p className="maintenance-cost text-2xl font-bold text-green-400">
+                      <p className="maintenance-cost text-xl sm:text-2xl font-bold text-green-400">
                         R$ {maintenance.cost.toFixed(2)}
                       </p>
                     </div>
@@ -453,18 +453,18 @@ export default function Reports({ vehicles }: ReportsProps) {
               ))}
 
               {/* Total de Investimentos */}
-              <div className="total-box bg-gradient-to-r from-blue-500/20 to-blue-600/20 border-2 border-blue-500 rounded-xl p-6 mt-8">
-                <div className="flex justify-between items-center">
+              <div className="total-box bg-gradient-to-r from-blue-500/20 to-blue-600/20 border-2 border-blue-500 rounded-xl p-4 md:p-6 mt-6 md:mt-8">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                   <div>
-                    <p className="total-label text-sm text-blue-300 mb-1">
+                    <p className="total-label text-xs sm:text-sm text-blue-300 mb-1">
                       Total de Investimentos em Manutenções
                     </p>
                     <p className="total-count text-xs text-gray-400">
                       {filteredMaintenances.length} {filteredMaintenances.length === 1 ? 'manutenção realizada' : 'manutenções realizadas'}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="total-amount text-4xl font-bold text-white">
+                  <div className="text-left sm:text-right w-full sm:w-auto">
+                    <p className="total-amount text-2xl sm:text-3xl md:text-4xl font-bold text-white">
                       R$ {totalMaintenanceCost.toFixed(2)}
                     </p>
                   </div>
@@ -475,8 +475,8 @@ export default function Reports({ vehicles }: ReportsProps) {
         </div>
 
         {/* Rodapé */}
-        <div className="print-footer mt-12 pt-6 border-t border-white/10 text-center">
-          <p className="text-sm text-gray-400">
+        <div className="print-footer mt-8 md:mt-12 pt-4 md:pt-6 border-t border-white/10 text-center">
+          <p className="text-xs sm:text-sm text-gray-400">
             GOTRES - Sistema de KM Veicular • Todos direitos reservados © 2012-2025
           </p>
           <p className="text-xs text-gray-500 mt-1">
