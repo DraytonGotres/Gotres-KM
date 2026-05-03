@@ -9,24 +9,23 @@ export default function InstallButton() {
   const [isInstalled, setIsInstalled] = useState(false)
 
   useEffect(() => {
-    // Verifica se já está instalado (modo standalone)
-    const checkIfInstalled = () => {
+    // Proteção para SSR
+    if (typeof window === 'undefined') return
+
+    // Verifica se já está instalado (UMA VEZ apenas)
+    try {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches
       const isIOSStandalone = (window.navigator as any).standalone === true
       
       if (isStandalone || isIOSStandalone) {
         setIsInstalled(true)
-        setIsInstallable(false)
-        return true
+        return // Sai do useEffect se já estiver instalado
       }
-      return false
+    } catch (error) {
+      console.error('Erro ao verificar modo standalone:', error)
     }
 
-    // Verifica imediatamente
-    if (checkIfInstalled()) {
-      return
-    }
-
+    // Handler para o evento de instalação
     const handler = (e: Event) => {
       e.preventDefault()
       setDeferredPrompt(e)
@@ -35,16 +34,10 @@ export default function InstallButton() {
 
     window.addEventListener('beforeinstallprompt', handler)
 
-    // Verifica periodicamente se foi instalado
-    const interval = setInterval(() => {
-      checkIfInstalled()
-    }, 1000)
-
     return () => {
       window.removeEventListener('beforeinstallprompt', handler)
-      clearInterval(interval)
     }
-  }, [])
+  }, []) // Executa apenas UMA VEZ
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) {
@@ -58,15 +51,19 @@ export default function InstallButton() {
       return
     }
 
-    deferredPrompt.prompt()
-    const { outcome } = await deferredPrompt.userChoice
+    try {
+      deferredPrompt.prompt()
+      const { outcome } = await deferredPrompt.userChoice
 
-    if (outcome === 'accepted') {
-      setIsInstallable(false)
-      setIsInstalled(true)
+      if (outcome === 'accepted') {
+        setIsInstallable(false)
+        setIsInstalled(true)
+      }
+
+      setDeferredPrompt(null)
+    } catch (error) {
+      console.error('Erro ao instalar PWA:', error)
     }
-
-    setDeferredPrompt(null)
   }
 
   // Não mostra o botão se já estiver instalado
@@ -75,7 +72,7 @@ export default function InstallButton() {
   }
 
   // Mostra o botão se for instalável OU se for iOS (que não dispara beforeinstallprompt)
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream
+  const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream
   
   if (!isInstallable && !isIOS) {
     return null

@@ -9,53 +9,41 @@ export default function InstallPWA() {
   const [isInstalled, setIsInstalled] = useState(false)
 
   useEffect(() => {
-    // Verifica se já está instalado (modo standalone)
-    const checkIfInstalled = () => {
+    // Proteção para SSR
+    if (typeof window === 'undefined') return
+
+    // Verifica se já está instalado (UMA VEZ apenas)
+    try {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches
       const isIOSStandalone = (window.navigator as any).standalone === true
       
       if (isStandalone || isIOSStandalone) {
         setIsInstalled(true)
-        setShowInstallPrompt(false)
-        return true
+        return // Sai do useEffect se já estiver instalado
       }
-      return false
-    }
-
-    // Verifica imediatamente
-    if (checkIfInstalled()) {
-      return
+    } catch (error) {
+      console.error('Erro ao verificar modo standalone:', error)
     }
 
     // Verifica se foi dispensado nesta sessão
     const dismissed = localStorage.getItem('pwa-install-dismissed')
     if (dismissed) {
-      setShowInstallPrompt(false)
+      return // Não mostra se foi dispensado
     }
 
+    // Handler para o evento de instalação
     const handler = (e: Event) => {
-      // Previne o mini-infobar do Chrome em mobile
       e.preventDefault()
-      // Guarda o evento para usar depois
       setDeferredPrompt(e)
-      // Mostra o botão de instalação (se não foi dispensado)
-      if (!dismissed) {
-        setShowInstallPrompt(true)
-      }
+      setShowInstallPrompt(true)
     }
 
     window.addEventListener('beforeinstallprompt', handler)
 
-    // Verifica periodicamente se foi instalado
-    const interval = setInterval(() => {
-      checkIfInstalled()
-    }, 1000)
-
     return () => {
       window.removeEventListener('beforeinstallprompt', handler)
-      clearInterval(interval)
     }
-  }, [])
+  }, []) // Executa apenas UMA VEZ
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) {
@@ -69,20 +57,20 @@ export default function InstallPWA() {
       return
     }
 
-    // Mostra o prompt de instalação
-    deferredPrompt.prompt()
+    try {
+      deferredPrompt.prompt()
+      const { outcome } = await deferredPrompt.userChoice
 
-    // Aguarda a escolha do usuário
-    const { outcome } = await deferredPrompt.userChoice
+      if (outcome === 'accepted') {
+        console.log('PWA instalado com sucesso')
+        setIsInstalled(true)
+      }
 
-    if (outcome === 'accepted') {
-      console.log('PWA instalado com sucesso')
-      setIsInstalled(true)
+      setDeferredPrompt(null)
+      setShowInstallPrompt(false)
+    } catch (error) {
+      console.error('Erro ao instalar PWA:', error)
     }
-
-    // Limpa o prompt
-    setDeferredPrompt(null)
-    setShowInstallPrompt(false)
   }
 
   const handleDismiss = () => {
@@ -100,6 +88,7 @@ export default function InstallPWA() {
         <button
           onClick={handleDismiss}
           className="absolute top-2 right-2 text-white/80 hover:text-white transition-colors"
+          aria-label="Fechar"
         >
           <X className="w-5 h-5" />
         </button>
