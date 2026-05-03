@@ -72,3 +72,313 @@ body {
 .animate-slide-down {
   animation: slide-down 0.3s ease-out;
 }
+
+/* Estilos de Impressão para Dossiê Digital */
+@media print {
+  /* ISOLAMENTO TOTAL - Esconde tudo exceto o dossiê */
+  body * {
+    visibility: hidden !important;
+  }
+  
+  .print-container,
+  .print-container * {
+    visibility: visible !important;
+  }
+  
+  .print-container {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  @page {
+    size: A4 portrait;
+    margin: 1cm;
+  }
+  
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  
+  html {
+    background: white !important;
+    background-image: none !important;
+  }
+  
+  body {
+    background: white !important;
+    background-image: none !important;
+    background-color: white !important;
+    color: #000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  
+  /* Remove qualquer gradiente ou imagem de fundo */
+  body::before,
+  body::after,
+  html::before,
+  html::after {
+    display: none !important;
+    background: none !important;
+  }
+  
+  /* Esconder elementos de navegação */
+  .no-print,
+  header,
+  nav,
+  button:not(.print-only),
+  .animate-slide-up,
+  .animate-slide-down {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  
+  /* Container principal de impressão */
+  .print-container {
+    background: white !important;
+    background-image: none !important;
+    background-color: white !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+  
+  /* Cabeçalho do dossiê */
+  .print-header {
+    background: white !important;
+    background-image: none !important;
+    border-bottom: 2px solid #3b82f6 !important;
+    padding-bottom: 15px !important;
+    margin-bottom: 20px !important;
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  
+  .print-header h1 {
+    color: #1e3a8a !important;
+    font-size: 24px !important;
+    margin: 0 !important;
+  }
+  
+  .print-header p {
+    color: #475569 !important;
+    font-size: 12px !important;
+  }
+  
+  /* Área de dados do veículo */
+  .vehicle-info-box {
+    background: #f8fafc !important;
+    background-image: none !important;
+    border: 1px solid #cbd5e1 !important;
+    padding: 12px !important;
+    margin: 10px 0 !important;
+    border-radius: 4px !important;
+  }
+  
+  .vehicle-info-box p {
+    color: #1e293b !important;
+    margin: 4px 0 !important;
+  }
+  
+  .vehicle-info-label {
+    color: #64748b !important;
+    font-size: 10px !important;
+  }
+  
+  .vehicle-info-value {
+    color: #0f172a !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+  }
+  
+  /* QR Code */
+  .print-qr {
+    background: white !important;
+    background-image: none !important;
+    border: 2px solid #3b82f6 !important;
+    border-radius: 4px !important;
+    padding: 10px !important;
+    width: 120px !important;
+    height: auto !important;
+    margin-right: 25px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  
+  .print-qr svg {
+    width: 100px !important;
+    height: 100px !important;
+    display: block !important;
+  }
+  
+  .print-qr p {
+    color: #475569 !important;
+    font-size: 8px !important;
+    margin-top: 6px !important;
+    text-align: center !important;
+    width: 100% !important;
+  }
+  
+  /* Período do relatório */
+  .period-info {
+    background: #f1f5f9 !important;
+    background-image: none !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 4px !important;
+    padding: 10px !important;
+    margin: 10px 0 !important;
+  }
+  
+  .period-info p {
+    color: #334155 !important;
+    font-size: 11px !important;
+    margin: 2px 0 !important;
+  }
+  
+  /* Título da seção */
+  .section-title {
+    color: #1e3a8a !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    margin: 20px 0 10px 0 !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+    padding-bottom: 8px !important;
+  }
+  
+  .section-title svg {
+    display: inline-block !important;
+  }
+  
+  /* Cards de manutenção */
+  .maintenance-item {
+    background: white !important;
+    background-image: none !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 4px !important;
+    padding: 12px !important;
+    margin-bottom: 12px !important;
+    page-break-inside: avoid !important;
+  }
+  
+  .maintenance-item h3 {
+    color: #1e293b !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    margin: 4px 0 !important;
+  }
+  
+  .maintenance-item p {
+    color: #475569 !important;
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+  }
+  
+  .maintenance-meta {
+    color: #64748b !important;
+    font-size: 10px !important;
+  }
+  
+  .maintenance-meta span {
+    color: #64748b !important;
+  }
+  
+  .maintenance-cost {
+    color: #059669 !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+  }
+  
+  .maintenance-cost-label {
+    color: #6b7280 !important;
+    font-size: 9px !important;
+  }
+  
+  /* Ícone emoji */
+  .maintenance-icon {
+    font-size: 28px !important;
+    line-height: 1 !important;
+  }
+  
+  /* Box de total */
+  .total-box {
+    background: #eff6ff !important;
+    background-image: none !important;
+    border: 2px solid #3b82f6 !important;
+    border-radius: 4px !important;
+    padding: 15px !important;
+    margin-top: 20px !important;
+    page-break-inside: avoid !important;
+  }
+  
+  .total-box p {
+    color: #1e3a8a !important;
+    margin: 4px 0 !important;
+  }
+  
+  .total-amount {
+    color: #1e40af !important;
+    font-size: 28px !important;
+    font-weight: 700 !important;
+  }
+  
+  .total-label {
+    color: #3b82f6 !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+  }
+  
+  .total-count {
+    color: #64748b !important;
+    font-size: 10px !important;
+  }
+  
+  /* Rodapé */
+  .print-footer {
+    background: white !important;
+    background-image: none !important;
+    border-top: 1px solid #cbd5e1 !important;
+    padding-top: 15px !important;
+    margin-top: 30px !important;
+    text-align: center !important;
+  }
+  
+  .print-footer p {
+    color: #64748b !important;
+    font-size: 10px !important;
+    margin: 3px 0 !important;
+  }
+  
+  /* Remover sombras e efeitos */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  
+  /* Garantir que imagens não quebrem */
+  img {
+    page-break-inside: avoid !important;
+    max-width: 100% !important;
+  }
+  
+  /* Forçar largura total */
+  .print-container > * {
+    max-width: 100% !important;
+  }
+}

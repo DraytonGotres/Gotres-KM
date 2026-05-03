@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Calendar, TrendingUp, DollarSign, Fuel, Wrench } from 'lucide-react'
+import { Calendar, TrendingUp, DollarSign, Fuel, Wrench, FileText, Printer, QrCode as QrCodeIcon } from 'lucide-react'
 import { supabase, type Vehicle, type Refueling, type Maintenance } from '@/lib/supabase'
 import { 
   Chart as ChartJS, 
@@ -18,6 +18,7 @@ import {
 import { Pie, Bar, Line } from 'react-chartjs-2'
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { QRCodeSVG } from 'qrcode.react'
 
 ChartJS.register(
   ArcElement,
@@ -46,6 +47,7 @@ export default function Reports({ vehicles }: ReportsProps) {
   const [endDate, setEndDate] = useState('')
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('all')
   const [loading, setLoading] = useState(true)
+  const [showDossier, setShowDossier] = useState(false)
 
   useEffect(() => {
     loadData()
@@ -268,6 +270,224 @@ export default function Reports({ vehicles }: ReportsProps) {
     return <div className="text-center text-gray-400 py-12">Carregando relatórios...</div>
   }
 
+  // Obter dados do veículo selecionado
+  const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId)
+  const systemUrl = typeof window !== 'undefined' ? window.location.origin : 'https://gotres-km.vercel.app'
+
+  // Função para obter ícone por tipo de manutenção
+  const getMaintenanceIcon = (type: string) => {
+    const iconMap: Record<string, string> = {
+      'Troca de Óleo': '🛢️',
+      'Revisão': '🔧',
+      'Alinhamento e Balanceamento': '⚖️',
+      'Troca de Pneus': '🛞',
+      'Freios': '🛑',
+      'Suspensão': '🔩',
+      'Ar Condicionado': '❄️',
+      'Sistema Elétrico': '⚡',
+      'Bateria': '🔋',
+      'Filtros': '🌀',
+      'Velas': '✨',
+      'Correia Dentada': '🔗',
+      'Embreagem': '⚙️',
+      'Funilaria e Pintura': '🎨',
+      'Outros': '🔨',
+    }
+    return iconMap[type] || '🔧'
+  }
+
+  // Renderizar Dossiê Digital
+  if (showDossier && selectedVehicleId !== 'all' && selectedVehicle) {
+    return (
+      <div className="print-container bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
+        {/* Botões de Ação - Não imprime */}
+        <div className="no-print flex justify-between items-center mb-6">
+          <button
+            onClick={() => setShowDossier(false)}
+            className="flex items-center gap-2 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-all"
+          >
+            ← Voltar aos Relatórios
+          </button>
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-all shadow-lg shadow-blue-500/50"
+          >
+            <Printer className="w-5 h-5" />
+            Imprimir Dossiê
+          </button>
+        </div>
+
+        {/* Cabeçalho do Dossiê */}
+        <div className="print-header border-b-2 border-blue-500/30 pb-6 mb-6">
+          <div className="flex justify-between items-start gap-6">
+            <div className="flex-1">
+              <div className="flex items-center gap-4 mb-4">
+                <img src="/logo.png" alt="GOTRES-KM" className="h-16 w-auto" />
+                <div>
+                  <h1 className="text-3xl font-bold text-white">
+                    DOSSIÊ DIGITAL DE MANUTENÇÕES
+                  </h1>
+                  <p className="text-blue-300 mt-1">
+                    Sistema GOTRES-KM - Gestão de Frota
+                  </p>
+                </div>
+              </div>
+
+              <div className="vehicle-info-box grid grid-cols-2 gap-4 mt-6 bg-blue-500/10 p-4 rounded-lg">
+                <div>
+                  <p className="vehicle-info-label text-sm text-blue-300 mb-1">Veículo</p>
+                  <p className="vehicle-info-value text-lg font-bold text-white">
+                    {selectedVehicle.manufacturer} {selectedVehicle.model}
+                  </p>
+                </div>
+                <div>
+                  <p className="vehicle-info-label text-sm text-blue-300 mb-1">Placa</p>
+                  <p className="vehicle-info-value text-lg font-bold text-white">
+                    {selectedVehicle.plate}
+                  </p>
+                </div>
+                <div>
+                  <p className="vehicle-info-label text-sm text-blue-300 mb-1">Ano</p>
+                  <p className="vehicle-info-value text-lg font-bold text-white">
+                    {selectedVehicle.year}
+                  </p>
+                </div>
+                <div>
+                  <p className="vehicle-info-label text-sm text-blue-300 mb-1">Cor</p>
+                  <p className="vehicle-info-value text-lg font-bold text-white">
+                    {selectedVehicle.color}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* QR Code de Autenticidade */}
+            <div className="print-qr bg-white p-4 rounded-xl border-2 border-blue-500/50">
+              <QRCodeSVG 
+                value={systemUrl}
+                size={100}
+                level="H"
+                includeMargin={false}
+              />
+              <p className="text-xs text-center text-gray-600 mt-2 font-medium">
+                Autenticidade Digital
+              </p>
+            </div>
+          </div>
+
+          {/* Período do Relatório */}
+          <div className="period-info mt-6 bg-slate-700/50 p-4 rounded-lg">
+            <p className="text-sm text-blue-300">
+              <strong>Período:</strong>{' '}
+              {periodType === 'custom' && startDate && endDate
+                ? `${format(parseISO(startDate), 'dd/MM/yyyy')} até ${format(parseISO(endDate), 'dd/MM/yyyy')}`
+                : periodType === 'month'
+                ? format(selectedDate, 'MMMM/yyyy', { locale: ptBR })
+                : format(selectedDate, 'yyyy')}
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              Emitido em: {format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+            </p>
+          </div>
+        </div>
+
+        {/* Lista Cronológica de Manutenções */}
+        <div>
+          <h2 className="section-title text-2xl font-bold text-white mb-4 flex items-center gap-2">
+            <FileText className="w-6 h-6" />
+            Histórico de Manutenções
+          </h2>
+
+          {filteredMaintenances.length === 0 ? (
+            <div className="bg-slate-700/50 rounded-xl p-8 text-center">
+              <Wrench className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-400">
+                Nenhuma manutenção registrada no período selecionado
+              </p>
+            </div>
+          ) : (
+            <>
+              {filteredMaintenances.map((maintenance, index) => (
+                <div
+                  key={maintenance.id}
+                  className="maintenance-item bg-slate-700/30 border border-white/10 rounded-xl p-6 mb-4 hover:border-blue-500/50 transition-all"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-4 flex-1">
+                      {/* Ícone da Categoria */}
+                      <div className="maintenance-icon text-4xl">{getMaintenanceIcon(maintenance.type)}</div>
+
+                      {/* Informações */}
+                      <div className="flex-1">
+                        <div className="maintenance-meta flex items-center gap-3 mb-2">
+                          <span className="text-sm font-medium text-blue-400">
+                            #{String(filteredMaintenances.length - index).padStart(3, '0')}
+                          </span>
+                          <span className="text-sm text-gray-400">
+                            {format(parseISO(maintenance.date + 'T12:00:00'), 'dd/MM/yyyy')}
+                          </span>
+                          <span className="text-sm text-gray-400">
+                            • {maintenance.km_at_maintenance.toLocaleString('pt-BR')} km
+                          </span>
+                        </div>
+
+                        <h3 className="text-lg font-bold text-white mb-2">
+                          {maintenance.type}
+                        </h3>
+
+                        <p className="text-gray-300 text-sm leading-relaxed">
+                          {maintenance.description}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Valor */}
+                    <div className="text-right">
+                      <p className="maintenance-cost-label text-xs text-gray-400 mb-1">Custo</p>
+                      <p className="maintenance-cost text-2xl font-bold text-green-400">
+                        R$ {maintenance.cost.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Total de Investimentos */}
+              <div className="total-box bg-gradient-to-r from-blue-500/20 to-blue-600/20 border-2 border-blue-500 rounded-xl p-6 mt-8">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="total-label text-sm text-blue-300 mb-1">
+                      Total de Investimentos em Manutenções
+                    </p>
+                    <p className="total-count text-xs text-gray-400">
+                      {filteredMaintenances.length} {filteredMaintenances.length === 1 ? 'manutenção realizada' : 'manutenções realizadas'}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="total-amount text-4xl font-bold text-white">
+                      R$ {totalMaintenanceCost.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Rodapé */}
+        <div className="print-footer mt-12 pt-6 border-t border-white/10 text-center">
+          <p className="text-sm text-gray-400">
+            GOTRES - Sistema de KM Veicular • Todos direitos reservados © 2012-2025
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            Documento gerado digitalmente pelo sistema GOTRES-KM
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // Renderização normal dos relatórios
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-4">
@@ -351,6 +571,19 @@ export default function Reports({ vehicles }: ReportsProps) {
                 />
               </div>
             </>
+          )}
+
+          {/* Botão Dossiê Digital */}
+          {selectedVehicleId !== 'all' && (
+            <div className="ml-auto">
+              <button
+                onClick={() => setShowDossier(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white rounded-lg font-medium transition-all shadow-lg shadow-purple-500/50 whitespace-nowrap"
+              >
+                <FileText className="w-5 h-5" />
+                Dossiê Digital
+              </button>
+            </div>
           )}
         </div>
       </div>
