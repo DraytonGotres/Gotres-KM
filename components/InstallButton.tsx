@@ -6,8 +6,27 @@ import { Download } from 'lucide-react'
 export default function InstallButton() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const [isInstallable, setIsInstallable] = useState(false)
+  const [isInstalled, setIsInstalled] = useState(false)
 
   useEffect(() => {
+    // Verifica se já está instalado (modo standalone)
+    const checkIfInstalled = () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+      const isIOSStandalone = (window.navigator as any).standalone === true
+      
+      if (isStandalone || isIOSStandalone) {
+        setIsInstalled(true)
+        setIsInstallable(false)
+        return true
+      }
+      return false
+    }
+
+    // Verifica imediatamente
+    if (checkIfInstalled()) {
+      return
+    }
+
     const handler = (e: Event) => {
       e.preventDefault()
       setDeferredPrompt(e)
@@ -16,13 +35,14 @@ export default function InstallButton() {
 
     window.addEventListener('beforeinstallprompt', handler)
 
-    // Verifica se já está instalado
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstallable(false)
-    }
+    // Verifica periodicamente se foi instalado
+    const interval = setInterval(() => {
+      checkIfInstalled()
+    }, 1000)
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handler)
+      clearInterval(interval)
     }
   }, [])
 
@@ -43,12 +63,24 @@ export default function InstallButton() {
 
     if (outcome === 'accepted') {
       setIsInstallable(false)
+      setIsInstalled(true)
     }
 
     setDeferredPrompt(null)
   }
 
-  // Sempre mostra o botão, mesmo que não seja instalável (para iOS)
+  // Não mostra o botão se já estiver instalado
+  if (isInstalled) {
+    return null
+  }
+
+  // Mostra o botão se for instalável OU se for iOS (que não dispara beforeinstallprompt)
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream
+  
+  if (!isInstallable && !isIOS) {
+    return null
+  }
+
   return (
     <button
       onClick={handleInstallClick}

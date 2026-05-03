@@ -6,26 +6,54 @@ import { Download, X } from 'lucide-react'
 export default function InstallPWA() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const [showInstallPrompt, setShowInstallPrompt] = useState(false)
+  const [isInstalled, setIsInstalled] = useState(false)
 
   useEffect(() => {
+    // Verifica se já está instalado (modo standalone)
+    const checkIfInstalled = () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+      const isIOSStandalone = (window.navigator as any).standalone === true
+      
+      if (isStandalone || isIOSStandalone) {
+        setIsInstalled(true)
+        setShowInstallPrompt(false)
+        return true
+      }
+      return false
+    }
+
+    // Verifica imediatamente
+    if (checkIfInstalled()) {
+      return
+    }
+
+    // Verifica se foi dispensado nesta sessão
+    const dismissed = localStorage.getItem('pwa-install-dismissed')
+    if (dismissed) {
+      setShowInstallPrompt(false)
+    }
+
     const handler = (e: Event) => {
       // Previne o mini-infobar do Chrome em mobile
       e.preventDefault()
       // Guarda o evento para usar depois
       setDeferredPrompt(e)
-      // Mostra o botão de instalação
-      setShowInstallPrompt(true)
+      // Mostra o botão de instalação (se não foi dispensado)
+      if (!dismissed) {
+        setShowInstallPrompt(true)
+      }
     }
 
     window.addEventListener('beforeinstallprompt', handler)
 
-    // Verifica se já está instalado
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setShowInstallPrompt(false)
-    }
+    // Verifica periodicamente se foi instalado
+    const interval = setInterval(() => {
+      checkIfInstalled()
+    }, 1000)
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handler)
+      clearInterval(interval)
     }
   }, [])
 
@@ -49,6 +77,7 @@ export default function InstallPWA() {
 
     if (outcome === 'accepted') {
       console.log('PWA instalado com sucesso')
+      setIsInstalled(true)
     }
 
     // Limpa o prompt
@@ -62,15 +91,8 @@ export default function InstallPWA() {
     localStorage.setItem('pwa-install-dismissed', 'true')
   }
 
-  // Não mostra se foi dispensado nesta sessão
-  useEffect(() => {
-    const dismissed = localStorage.getItem('pwa-install-dismissed')
-    if (dismissed) {
-      setShowInstallPrompt(false)
-    }
-  }, [])
-
-  if (!showInstallPrompt) return null
+  // Não mostra se já estiver instalado ou se não deve mostrar
+  if (isInstalled || !showInstallPrompt) return null
 
   return (
     <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50 animate-slide-up">
