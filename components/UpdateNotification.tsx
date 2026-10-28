@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { RefreshCw, X } from 'lucide-react'
 
 export default function UpdateNotification() {
+  const requestedUpdate = useRef(false)
   const [showUpdate, setShowUpdate] = useState(false)
   const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null)
 
@@ -13,7 +14,7 @@ export default function UpdateNotification() {
       const interval = setInterval(() => {
         navigator.serviceWorker.getRegistration().then((reg) => {
           if (reg) {
-            reg.update()
+            void reg.update().catch(() => {})
           }
         })
       }, 30000)
@@ -43,19 +44,22 @@ export default function UpdateNotification() {
 
       // Detectar quando o service worker é atualizado
       let refreshing = false
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (!refreshing) {
+      const onControllerChange = () => {
+        if (requestedUpdate.current && !refreshing) {
           refreshing = true
           window.location.reload()
         }
-      })
+      }
+      navigator.serviceWorker.addEventListener('controllerchange', onControllerChange)
 
-      return () => clearInterval(interval)
+      return () => { clearInterval(interval); navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange) }
     }
   }, [])
 
   const handleUpdate = () => {
     if (registration?.waiting) {
+      if (!window.confirm('Atualizar e recarregar agora? Salve ou cancele os formulários antes de continuar.')) return
+      requestedUpdate.current = true
       // Envia mensagem para o service worker ativar a nova versão
       registration.waiting.postMessage({ type: 'SKIP_WAITING' })
     }

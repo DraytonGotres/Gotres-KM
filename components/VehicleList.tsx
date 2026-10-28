@@ -1,6 +1,7 @@
 'use client'
 
-import { Car, Trash2 } from 'lucide-react'
+import { Car, Archive } from 'lucide-react'
+import { dataError } from '@/lib/data'
 import { supabase, type Vehicle } from '@/lib/supabase'
 
 interface VehicleListProps {
@@ -10,12 +11,13 @@ interface VehicleListProps {
 
 export default function VehicleList({ vehicles, onVehicleUpdated }: VehicleListProps) {
   const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este veículo?')) return
+    const vehicle = vehicles.find(v => v.id === id)
+    if (!confirm(vehicle?.active ? 'Inativar este veículo? Todos os históricos serão preservados.' : 'Reativar este veículo?')) return
 
-    const { error } = await supabase.from('vehicles').delete().eq('id', id)
+    const { error } = await supabase.from('vehicles').update({ active: !vehicle?.active }).eq('id', id).select('id').single()
     
     if (error) {
-      alert('Erro ao excluir veículo: ' + error.message)
+      alert(dataError(error))
     } else {
       onVehicleUpdated()
     }
@@ -44,15 +46,18 @@ export default function VehicleList({ vehicles, onVehicleUpdated }: VehicleListP
             </div>
             <button
               onClick={() => handleDelete(vehicle.id)}
+              aria-label={vehicle.active ? 'Inativar veículo' : 'Reativar veículo'}
+              title={vehicle.active ? 'Inativar veículo' : 'Reativar veículo'}
               className="text-red-400 hover:text-red-300 transition-colors"
             >
-              <Trash2 className="w-5 h-5" />
+              <Archive className="w-5 h-5" />
             </button>
           </div>
           
           <h3 className="text-xl font-bold text-white mb-2">
             {vehicle.manufacturer} {vehicle.model}
           </h3>
+          {!vehicle.active && <p className="text-amber-200 text-sm mb-2">Inativo • Histórico preservado</p>}
           
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">

@@ -5,7 +5,8 @@ import { Plus, Fuel, TrendingUp, Edit2, Trash2 } from 'lucide-react'
 import { supabase, type Vehicle, type Refueling } from '@/lib/supabase'
 import RefuelingForm from './RefuelingForm'
 import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { readAll, dataError } from '@/lib/data'
+import { ratio, numericLabel, historyIssues } from '@/lib/domain'
 
 interface RefuelingListProps {
   vehicles: Vehicle[]
@@ -16,6 +17,7 @@ export default function RefuelingList({ vehicles }: RefuelingListProps) {
   const [showForm, setShowForm] = useState(false)
   const [editingRefueling, setEditingRefueling] = useState<Refueling | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
 
   useEffect(() => {
     loadRefuelings()
@@ -23,13 +25,12 @@ export default function RefuelingList({ vehicles }: RefuelingListProps) {
 
   const loadRefuelings = async () => {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('refuelings')
-      .select('*')
-      .order('date', { ascending: false })
-    
-    if (data) setRefuelings(data)
-    setLoading(false)
+    setLoadError('')
+    try {
+      const rows = await readAll<Refueling>('refuelings')
+      setRefuelings(rows.sort((a, b) => b.date.localeCompare(a.date)))
+    } catch (error) { setLoadError(dataError(error)) }
+    finally { setLoading(false) }
   }
 
   const getVehicleInfo = (vehicleId: string) => {
@@ -51,10 +52,10 @@ export default function RefuelingList({ vehicles }: RefuelingListProps) {
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir este abastecimento?')) return
 
-    const { error } = await supabase.from('refuelings').delete().eq('id', id)
+    const { error } = await supabase.from('refuelings').delete().eq('id', id).select('id').single()
     
     if (error) {
-      alert('Erro ao excluir abastecimento: ' + error.message)
+      alert(dataError(error))
     } else {
       loadRefuelings()
     }
@@ -64,6 +65,8 @@ export default function RefuelingList({ vehicles }: RefuelingListProps) {
     setShowForm(false)
     setEditingRefueling(null)
   }
+
+  if (loadError) return <div role="alert" className="text-amber-200 p-4">{loadError} <button className="underline" onClick={loadRefuelings}>Tentar novamente</button></div>
 
   if (vehicles.length === 0) {
     return (
@@ -77,6 +80,7 @@ export default function RefuelingList({ vehicles }: RefuelingListProps) {
 
   return (
     <div>
+      {vehicles.some(v => historyIssues(refuelings.filter(r => r.vehicle_id === v.id)).length > 0) && <p role="status" className="text-amber-200 mb-4">Há inconsistências antigas de hodômetro. Os dados originais foram preservados; revise antes de usar os indicadores.</p>}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h2 className="text-xl md:text-2xl font-bold text-white">Abastecimentos</h2>
         <button
@@ -169,7 +173,7 @@ export default function RefuelingList({ vehicles }: RefuelingListProps) {
                 <div>
                   <p className="text-xs text-gray-400 mb-1">Consumo</p>
                   <p className="text-lg font-bold text-blue-400">
-                    {(refueling.km_driven / refueling.liters).toFixed(2)} km/L
+                    {numericLabel(ratio(refueling.km_driven, refueling.liters))} km/L
                   </p>
                 </div>
               </div>

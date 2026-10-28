@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
+import { localDate } from '@/lib/domain'
+import { dataError } from '@/lib/data'
 import { supabase, type Vehicle, type Maintenance } from '@/lib/supabase'
 
 interface MaintenanceFormProps {
@@ -32,7 +34,7 @@ const maintenanceTypes = [
 export default function MaintenanceForm({ vehicles, editingMaintenance, onClose, onSuccess }: MaintenanceFormProps) {
   const [formData, setFormData] = useState({
     vehicle_id: '',
-    date: new Date().toISOString().split('T')[0],
+    date: localDate(),
     type: '',
     description: '',
     cost: 0,
@@ -57,12 +59,16 @@ export default function MaintenanceForm({ vehicles, editingMaintenance, onClose,
     e.preventDefault()
     setLoading(true)
 
+    if (![formData.cost, formData.km_at_maintenance].every(Number.isFinite) || formData.cost < 0 || formData.km_at_maintenance < 0 || !formData.description.trim() || !formData.type) {
+      alert('Confira os valores e a descrição.'); setLoading(false); return
+    }
+
     let error
     if (editingMaintenance) {
       const { error: updateError } = await supabase
         .from('maintenances')
         .update(formData)
-        .eq('id', editingMaintenance.id)
+        .eq('id', editingMaintenance.id).select('id').single()
       error = updateError
     } else {
       const { error: insertError } = await supabase.from('maintenances').insert([formData])
@@ -70,7 +76,7 @@ export default function MaintenanceForm({ vehicles, editingMaintenance, onClose,
     }
 
     if (error) {
-      alert(`Erro ao ${editingMaintenance ? 'atualizar' : 'registrar'} manutenção: ` + error.message)
+      alert(dataError(error))
     } else {
       onSuccess()
     }
@@ -102,12 +108,13 @@ export default function MaintenanceForm({ vehicles, editingMaintenance, onClose,
               </label>
               <select
                 required
+                disabled={Boolean(editingMaintenance)}
                 value={formData.vehicle_id}
                 onChange={(e) => setFormData({ ...formData, vehicle_id: e.target.value })}
                 className="w-full px-4 py-3 bg-slate-700 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Selecione o veículo...</option>
-                {vehicles.map((v) => (
+                {vehicles.filter(v => v.active || v.id === formData.vehicle_id).map((v) => (
                   <option key={v.id} value={v.id}>
                     {v.manufacturer} {v.model} - {v.plate}
                   </option>

@@ -51,3 +51,28 @@ DEPLOY-VERCEL.md
 CRIAR-FAVICON.md
 IMPRESSAO-DOSSIE.md
 LIMPEZA-CACHE-MOBILE.md
+
+# Documentacao e SQL permanecem somente no computador
+*.[mM][dD]
+*.[sS][qQ][lL]
+
+# Configuracao privada e ferramentas locais
+.env*
+!.env.local.example
+.local-tools/
+.aws/
+.codex/
+.agents/
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.dump
+*.backup
+*.bak
+backups/
+backup/
+credentials*.json
+service-account*.json
+secrets.*

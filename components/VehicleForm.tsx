@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { brazilianManufacturers, carColors } from '@/lib/manufacturers'
+import { dataError } from '@/lib/data'
 
 interface VehicleFormProps {
   onClose: () => void
@@ -24,10 +25,12 @@ export default function VehicleForm({ onClose, onSuccess }: VehicleFormProps) {
     e.preventDefault()
     setLoading(true)
 
-    const { error } = await supabase.from('vehicles').insert([formData])
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user?.email_confirmed_at) { alert('Sessão expirada. Entre novamente.'); setLoading(false); return }
+    const { error } = await supabase.from('vehicles').insert([{ ...formData, plate: formData.plate.replace(/[^A-Z0-9]/g, ''), owner_id: user.id }])
 
     if (error) {
-      alert('Erro ao cadastrar veículo: ' + error.message)
+      alert(dataError(error))
     } else {
       onSuccess()
     }

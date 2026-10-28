@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
+import { localDate, validateRefueling } from '@/lib/domain'
+import { readAll, dataError } from '@/lib/data'
 import { supabase, type Vehicle, type Refueling } from '@/lib/supabase'
 
 interface RefuelingFormProps {
@@ -14,7 +16,7 @@ interface RefuelingFormProps {
 export default function RefuelingForm({ vehicles, editingRefueling, onClose, onSuccess }: RefuelingFormProps) {
   const [formData, setFormData] = useState({
     vehicle_id: '',
-    date: new Date().toISOString().split('T')[0],
+    date: localDate(),
     km_current: 0,
     km_previous: 0,
     liters: 0,
@@ -23,6 +25,19 @@ export default function RefuelingForm({ vehicles, editingRefueling, onClose, onS
     fuel_type: 'Gasolina',
   })
   const [loading, setLoading] = useState(false)
+  const [referenceError, setReferenceError] = useState('')
+
+  useEffect(() => {
+    if (editingRefueling || !formData.vehicle_id) return
+    let current = true
+    setReferenceError('')
+    void readAll<Refueling>('refuelings', formData.vehicle_id).then(rows => {
+      const previous = rows.filter(row => row.date <= formData.date)
+        .sort((a, b) => b.date.localeCompare(a.date) || b.km_current - a.km_current)[0]
+      if (current) setFormData(prev => ({ ...prev, km_previous: previous?.km_current ?? 0 }))
+    }).catch(error => { if (current) setReferenceError(dataError(error)) })
+    return () => { current = false }
+  }, [formData.vehicle_id, formData.date, editingRefueling])
 
   // Preencher formulário ao editar
   useEffect(() => {
@@ -45,24 +60,8 @@ export default function RefuelingForm({ vehicles, editingRefueling, onClose, onS
     return liters * pricePerLiter
   }
 
-  const handleVehicleChange = async (vehicleId: string) => {
-    setFormData({ ...formData, vehicle_id: vehicleId })
-    
-    if (vehicleId && !editingRefueling) {
-      // Buscar o último abastecimento deste veículo
-      const { data } = await supabase
-        .from('refuelings')
-        .select('km_current')
-        .eq('vehicle_id', vehicleId)
-        .order('date', { ascending: false })
-        .limit(1)
-      
-      if (data && data.length > 0) {
-        setFormData(prev => ({ ...prev, vehicle_id: vehicleId, km_previous: data[0].km_current }))
-      } else {
-        setFormData(prev => ({ ...prev, vehicle_id: vehicleId, km_previous: 0 }))
-      }
-    }
+  const handleVehicleChange = (vehicleId: string) => {
+    setFormData(prev => ({ ...prev, vehicle_id: vehicleId, km_previous: 0 }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -77,10 +76,19 @@ export default function RefuelingForm({ vehicles, editingRefueling, onClose, onS
       return
     }
 
+    try {
+      const records = await readAll<Refueling>('refuelings', formData.vehicle_id)
+      const invalid = validateRefueling(formData, records, editingRefueling?.id)
+      if (invalid) { alert(invalid); setLoading(false); return }
+    } catch (error) { alert(dataError(error)); setLoading(false); return }
+
     // Garantir que a data seja salva corretamente sem conversão de timezone
     const dataToSave = {
       ...formData,
-      km_driven,
+      km_driven: editingRefueling && formData.km_current === editingRefueling.km_current && formData.km_previous === editingRefueling.km_previous
+        ? editingRefueling.km_driven : km_driven,
+      cost: editingRefueling && formData.liters === editingRefueling.liters && formData.price_per_liter === editingRefueling.price_per_liter
+        ? editingRefueling.cost : Math.round(formData.liters * formData.price_per_liter * 100) / 100,
       date: formData.date,
     }
 
@@ -89,7 +97,7 @@ export default function RefuelingForm({ vehicles, editingRefueling, onClose, onS
       const result = await supabase
         .from('refuelings')
         .update(dataToSave)
-        .eq('id', editingRefueling.id)
+        .eq('id', editingRefueling.id).select('id').single()
       error = result.error
     } else {
       const result = await supabase.from('refuelings').insert([dataToSave])
@@ -97,7 +105,7 @@ export default function RefuelingForm({ vehicles, editingRefueling, onClose, onS
     }
 
     if (error) {
-      alert(`Erro ao ${editingRefueling ? 'atualizar' : 'registrar'} abastecimento: ` + error.message)
+      alert(dataError(error))
     } else {
       onSuccess()
     }
@@ -129,6 +137,8 @@ export default function RefuelingForm({ vehicles, editingRefueling, onClose, onS
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-4" autoComplete="off">
+            {referenceError && <p role="alert" className="text-amber-200">{referenceError}</p>}
+            {editingRefueling && <p className="text-sm text-blue-200">Veículo e data histórica são preservados. Alterações nos hodômetros precisam manter a sequência existente.</p>}
             {/* Veículo */}
             <div>
               <label className="block text-sm font-medium text-blue-200 mb-2">
@@ -136,12 +146,13 @@ export default function RefuelingForm({ vehicles, editingRefueling, onClose, onS
               </label>
               <select
                 required
+                disabled={Boolean(editingRefueling)}
                 value={formData.vehicle_id}
                 onChange={(e) => handleVehicleChange(e.target.value)}
                 className="w-full px-4 py-3 bg-slate-700 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Selecione o veículo...</option>
-                {vehicles.map((v) => (
+                {vehicles.filter(v => v.active || v.id === formData.vehicle_id).map((v) => (
                   <option key={v.id} value={v.id}>
                     {v.manufacturer} {v.model} - {v.plate}
                   </option>
@@ -157,6 +168,7 @@ export default function RefuelingForm({ vehicles, editingRefueling, onClose, onS
                 </label>
                 <input
                   type="date"
+                  disabled={Boolean(editingRefueling)}
                   required
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
@@ -185,7 +197,7 @@ export default function RefuelingForm({ vehicles, editingRefueling, onClose, onS
               {/* KM Anterior */}
               <div>
                 <label className="block text-sm font-medium text-blue-200 mb-2">
-                  KM Anterior {formData.km_previous > 0 && !editingRefueling && <span className="text-green-400 text-xs">(Auto)</span>}
+                  KM Anterior
                 </label>
                 <input
                   type="number"

@@ -19,6 +19,8 @@ import { Pie, Bar, Line } from 'react-chartjs-2'
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { QRCodeSVG } from 'qrcode.react'
+import { readAll, dataError } from '@/lib/data'
+import { calendarSelection, ratio, numericLabel, historyIssues } from '@/lib/domain'
 
 ChartJS.register(
   ArcElement,
@@ -47,6 +49,7 @@ export default function Reports({ vehicles }: ReportsProps) {
   const [endDate, setEndDate] = useState('')
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('all')
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [showDossier, setShowDossier] = useState(false)
 
   useEffect(() => {
@@ -55,17 +58,19 @@ export default function Reports({ vehicles }: ReportsProps) {
 
   const loadData = async () => {
     setLoading(true)
-    const [refuelingsData, maintenancesData] = await Promise.all([
-      supabase.from('refuelings').select('*').order('date', { ascending: true }),
-      supabase.from('maintenances').select('*').order('date', { ascending: true })
-    ])
-    
-    if (refuelingsData.data) setRefuelings(refuelingsData.data)
-    if (maintenancesData.data) setMaintenances(maintenancesData.data)
-    setLoading(false)
+    setLoadError('')
+    try {
+      const [refuelingsData, maintenancesData] = await Promise.all([
+        readAll<Refueling>('refuelings'), readAll<Maintenance>('maintenances')
+      ])
+      setRefuelings(refuelingsData.sort((a, b) => a.date.localeCompare(b.date) || a.km_current - b.km_current))
+      setMaintenances(maintenancesData.sort((a, b) => a.date.localeCompare(b.date)))
+    } catch (error) { setLoadError(dataError(error)) }
+    finally { setLoading(false) }
   }
 
   const filterDataByPeriod = <T extends { date: string }>(data: T[]) => {
+    if (periodType === 'custom' && (!startDate || !endDate || startDate > endDate)) return []
     if (periodType === 'custom' && startDate && endDate) {
       return data.filter(item => {
         const itemDate = parseISO(item.date)
@@ -100,7 +105,8 @@ export default function Reports({ vehicles }: ReportsProps) {
   const totalMaintenanceCost = filteredMaintenances.reduce((sum, m) => sum + m.cost, 0)
   const totalKmDriven = filteredRefuelings.reduce((sum, r) => sum + r.km_driven, 0)
   const totalLiters = filteredRefuelings.reduce((sum, r) => sum + r.liters, 0)
-  const avgConsumption = totalLiters > 0 ? totalKmDriven / totalLiters : 0
+  const avgConsumption = ratio(totalKmDriven, totalLiters)
+  const inconsistentCount = vehicles.reduce((sum, vehicle) => sum + historyIssues(refuelings.filter(r => r.vehicle_id === vehicle.id)).length, 0)
 
   // Gráfico de Pizza - Custos por Veículo
   const costsByVehicle = vehicles.map(vehicle => {
@@ -111,7 +117,7 @@ export default function Reports({ vehicles }: ReportsProps) {
       .filter(m => m.vehicle_id === vehicle.id)
       .reduce((sum, m) => sum + m.cost, 0)
     return {
-      vehicle: `${vehicle.manufacturer} ${vehicle.model}`,
+      vehicle: `${vehicle.manufacturer} ${vehicle.model} • ${vehicle.plate}`,
       total: refuelCost + maintCost
     }
   }).filter(v => v.total > 0)
@@ -189,18 +195,18 @@ export default function Reports({ vehicles }: ReportsProps) {
   })
 
   const barChartData = {
-    labels: Object.keys(monthlyData),
+    labels: Object.keys(monthlyData).sort((a, b) => a.slice(3).localeCompare(b.slice(3)) || a.slice(0, 2).localeCompare(b.slice(0, 2))),
     datasets: [
       {
         label: 'Abastecimentos',
-        data: Object.values(monthlyData).map(d => d.refuel),
+        data: Object.keys(monthlyData).sort((a, b) => a.slice(3).localeCompare(b.slice(3)) || a.slice(0, 2).localeCompare(b.slice(0, 2))).map(key => monthlyData[key].refuel),
         backgroundColor: 'rgba(59, 130, 246, 0.8)',
         borderColor: 'rgba(59, 130, 246, 1)',
         borderWidth: 2,
       },
       {
         label: 'Manutenções',
-        data: Object.values(monthlyData).map(d => d.maintenance),
+        data: Object.keys(monthlyData).sort((a, b) => a.slice(3).localeCompare(b.slice(3)) || a.slice(0, 2).localeCompare(b.slice(0, 2))).map(key => monthlyData[key].maintenance),
         backgroundColor: 'rgba(239, 68, 68, 0.8)',
         borderColor: 'rgba(239, 68, 68, 1)',
         borderWidth: 2,
@@ -211,21 +217,22 @@ export default function Reports({ vehicles }: ReportsProps) {
   // Gráfico de Linha - Consumo ao longo do tempo
   const consumptionData = filteredRefuelings.map(r => ({
     date: format(parseISO(r.date), 'dd-MM-yyyy'),
-    consumption: r.km_driven / r.liters,
+    consumption: ratio(r.km_driven, r.liters),
+    vehicleId: r.vehicle_id,
     vehicle: vehicles.find(v => v.id === r.vehicle_id)?.plate || ''
   }))
 
   const lineChartData = {
     labels: consumptionData.map(d => d.date),
-    datasets: [{
-      label: 'Consumo (km/L)',
-      data: consumptionData.map(d => d.consumption),
-      borderColor: 'rgba(16, 185, 129, 1)',
-      backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    datasets: vehicles.filter(v => consumptionData.some(d => d.vehicleId === v.id)).map((vehicle, index) => ({
+      label: `${vehicle.plate} (km/L)`,
+      data: consumptionData.map(d => d.vehicleId === vehicle.id ? d.consumption : null),
+      borderColor: ['#10b981', '#3b82f6', '#f59e0b', '#ec4899'][index % 4],
+      spanGaps: true,
       borderWidth: 3,
       tension: 0.4,
-      fill: true,
-    }]
+      fill: false,
+    }))
   }
 
   const chartOptions = {
@@ -269,6 +276,7 @@ export default function Reports({ vehicles }: ReportsProps) {
   if (loading) {
     return <div className="text-center text-gray-400 py-12">Carregando relatórios...</div>
   }
+  if (loadError) return <div role="alert" className="text-amber-200 p-4">{loadError} <button className="underline" onClick={loadData}>Tentar novamente</button></div>
 
   // Obter dados do veículo selecionado
   const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId)
@@ -490,6 +498,8 @@ export default function Reports({ vehicles }: ReportsProps) {
   // Renderização normal dos relatórios
   return (
     <div className="space-y-6">
+      <p className="text-sm text-amber-200">Indicadores derivados dos abastecimentos, sem comprovação de tanque cheio. A distância pode atravessar os limites do período. {inconsistentCount > 0 && `${inconsistentCount} registro(s) com inconsistência de hodômetro; originais preservados.`}</p>
+      {periodType === 'custom' && (!startDate || !endDate || startDate > endDate) && <p role="alert" className="text-amber-200">Informe as duas datas, com início anterior ou igual ao fim.</p>}
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl md:text-2xl font-bold text-white">Relatórios e Análises</h2>
       </div>
@@ -540,7 +550,7 @@ export default function Reports({ vehicles }: ReportsProps) {
                 value={periodType === 'month' 
                   ? format(selectedDate, 'yyyy-MM') 
                   : format(selectedDate, 'yyyy')}
-                onChange={(e) => setSelectedDate(new Date(e.target.value + (periodType === 'year' ? '-01-01' : '-01')))}
+                onChange={(e) => { const date = calendarSelection(e.target.value, periodType === 'year'); if (date) setSelectedDate(date) }}
                 className="px-4 py-3 bg-slate-700 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -578,6 +588,7 @@ export default function Reports({ vehicles }: ReportsProps) {
             <div className="ml-auto">
               <button
                 onClick={() => setShowDossier(true)}
+                disabled={periodType === 'custom' && (!startDate || !endDate || startDate > endDate)}
                 className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white rounded-lg font-medium transition-all shadow-lg shadow-purple-500/50 whitespace-nowrap"
               >
                 <FileText className="w-5 h-5" />
@@ -618,7 +629,7 @@ export default function Reports({ vehicles }: ReportsProps) {
             <span className="text-xs text-purple-300">Média</span>
           </div>
           <p className="text-2xl font-bold text-white">
-            {avgConsumption.toFixed(2)}
+            {numericLabel(avgConsumption)}
           </p>
           <p className="text-sm text-purple-200 mt-1">km/L</p>
         </div>

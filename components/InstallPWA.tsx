@@ -103,7 +103,7 @@ export default function InstallPWA() {
               Instalar GOTRES-KM
             </h3>
             <p className="text-blue-100 text-sm mb-4">
-              Instale o app para acesso rápido e use offline!
+              Instale o app para acesso rápido. Consultas e registros precisam de conexão.
             </p>
             
             <button

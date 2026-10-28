@@ -11,22 +11,27 @@ import InstallPWA from '@/components/InstallPWA'
 import InstallButton from '@/components/InstallButton'
 import UpdateNotification from '@/components/UpdateNotification'
 import { supabase, type Vehicle } from '@/lib/supabase'
+import AuthGate from '@/components/AuthGate'
+import { readAll, dataError } from '@/lib/data'
 
 export default function Home() {
+  return <AuthGate><FleetHome /></AuthGate>
+}
+
+function FleetHome() {
   const [activeTab, setActiveTab] = useState<'vehicles' | 'refueling' | 'maintenance' | 'reports'>('vehicles')
   const [showVehicleForm, setShowVehicleForm] = useState(false)
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [loadError, setLoadError] = useState('')
   useEffect(() => {
     loadVehicles()
   }, [])
 
   const loadVehicles = async () => {
-    const { data } = await supabase
-      .from('vehicles')
-      .select('*')
-      .order('created_at', { ascending: false })
-    
-    if (data) setVehicles(data)
+    try {
+      setLoadError('')
+      setVehicles((await readAll<Vehicle>('vehicles')).sort((a, b) => b.created_at.localeCompare(a.created_at)))
+    } catch (error) { setLoadError(dataError(error)) }
   }
 
   const handleVehicleAdded = () => {
@@ -106,6 +111,7 @@ export default function Home() {
 
       {/* Content */}
       <main className="container mx-auto px-4 py-8">
+        {loadError ? <div role="alert" className="text-amber-200 p-4">{loadError} <button onClick={loadVehicles} className="underline">Tentar novamente</button></div> : <>
         {activeTab === 'vehicles' && (
           <div>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -141,6 +147,7 @@ export default function Home() {
         {activeTab === 'reports' && (
           <Reports vehicles={vehicles} />
         )}
+        </>}
       </main>
 
       {/* Footer */}

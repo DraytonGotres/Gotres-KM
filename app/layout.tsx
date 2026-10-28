@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import RegisterServiceWorker from './register-sw'
@@ -9,18 +9,16 @@ export const metadata: Metadata = {
   title: 'GOTRES-KM - Gestão de Frota',
   description: 'Sistema de gestão de frota de veículos GOTRES-KM',
   manifest: '/manifest.json',
-  themeColor: '#3b82f6',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'GOTRES-KM',
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 5,
-    userScalable: true,
-  },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#3b82f6', width: 'device-width', initialScale: 1,
+  maximumScale: 5, userScalable: true,
 }
 
 export default function RootLayout({

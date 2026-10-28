@@ -5,7 +5,8 @@ import { Plus, Wrench, Edit2, Trash2 } from 'lucide-react'
 import { supabase, type Vehicle, type Maintenance } from '@/lib/supabase'
 import MaintenanceForm from './MaintenanceForm'
 import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { readAll, dataError } from '@/lib/data'
+import { ratio, numericLabel, historyIssues } from '@/lib/domain'
 
 interface MaintenanceListProps {
   vehicles: Vehicle[]
@@ -16,6 +17,7 @@ export default function MaintenanceList({ vehicles }: MaintenanceListProps) {
   const [showForm, setShowForm] = useState(false)
   const [editingMaintenance, setEditingMaintenance] = useState<Maintenance | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
 
   useEffect(() => {
     loadMaintenances()
@@ -23,13 +25,12 @@ export default function MaintenanceList({ vehicles }: MaintenanceListProps) {
 
   const loadMaintenances = async () => {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('maintenances')
-      .select('*')
-      .order('date', { ascending: false })
-    
-    if (data) setMaintenances(data)
-    setLoading(false)
+    setLoadError('')
+    try {
+      const rows = await readAll<Maintenance>('maintenances')
+      setMaintenances(rows.sort((a, b) => b.date.localeCompare(a.date)))
+    } catch (error) { setLoadError(dataError(error)) }
+    finally { setLoading(false) }
   }
 
   const getVehicleInfo = (vehicleId: string) => {
@@ -51,7 +52,7 @@ export default function MaintenanceList({ vehicles }: MaintenanceListProps) {
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir esta manutenção?')) return
 
-    const { error } = await supabase.from('maintenances').delete().eq('id', id)
+    const { error } = await supabase.from('maintenances').delete().eq('id', id).select('id').single()
     
     if (error) {
       alert('Erro ao excluir manutenção: ' + error.message)
@@ -64,6 +65,8 @@ export default function MaintenanceList({ vehicles }: MaintenanceListProps) {
     setShowForm(false)
     setEditingMaintenance(null)
   }
+
+  if (loadError) return <div role="alert" className="text-amber-200 p-4">{loadError} <button className="underline" onClick={loadMaintenances}>Tentar novamente</button></div>
 
   if (vehicles.length === 0) {
     return (
