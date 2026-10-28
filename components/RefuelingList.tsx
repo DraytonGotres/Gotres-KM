@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Plus, Fuel, TrendingUp, Edit2, Trash2 } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { Plus, Fuel, TrendingUp, Edit2, Trash2, AlertTriangle } from 'lucide-react'
 import { supabase, type Vehicle, type Refueling } from '@/lib/supabase'
 import RefuelingForm from './RefuelingForm'
 import { format } from 'date-fns'
 import { readAll, dataError } from '@/lib/data'
-import { ratio, numericLabel, historyIssues } from '@/lib/domain'
+import { ratio, numericLabel, historyIssueDetails } from '@/lib/domain'
 
 interface RefuelingListProps {
   vehicles: Vehicle[]
@@ -18,6 +18,16 @@ export default function RefuelingList({ vehicles }: RefuelingListProps) {
   const [editingRefueling, setEditingRefueling] = useState<Refueling | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+  const [expandedAlert, setExpandedAlert] = useState<string | null>(null)
+  const issues = useMemo(() => {
+    const groups = new Map<string, Refueling[]>()
+    refuelings.forEach(row => {
+      const group = groups.get(row.vehicle_id) ?? []
+      group.push(row)
+      groups.set(row.vehicle_id, group)
+    })
+    return new Map(Array.from(groups.values()).flatMap(rows => Array.from(historyIssueDetails(rows))))
+  }, [refuelings])
 
   useEffect(() => {
     loadRefuelings()
@@ -80,7 +90,6 @@ export default function RefuelingList({ vehicles }: RefuelingListProps) {
 
   return (
     <div>
-      {vehicles.some(v => historyIssues(refuelings.filter(r => r.vehicle_id === v.id)).length > 0) && <p role="status" className="text-amber-200 mb-4">Há inconsistências antigas de hodômetro. Os dados originais foram preservados; revise antes de usar os indicadores.</p>}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h2 className="text-xl md:text-2xl font-bold text-white">Abastecimentos</h2>
         <button
@@ -123,6 +132,19 @@ export default function RefuelingList({ vehicles }: RefuelingListProps) {
                   <p className="text-sm text-gray-400">
                     {format(new Date(refueling.date + 'T12:00:00'), 'dd-MM-yyyy')}
                   </p>
+                  {issues.has(refueling.id) && (
+                    <button
+                      type="button"
+                      onClick={() => setExpandedAlert(current => current === refueling.id ? null : refueling.id)}
+                      aria-label="Ver inconsistências de hodômetro deste abastecimento"
+                      aria-expanded={expandedAlert === refueling.id}
+                      aria-controls={`odometer-alert-${refueling.id}`}
+                      title="Inconsistência de hodômetro"
+                      className="mt-1 inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl text-yellow-400 hover:bg-yellow-500/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-yellow-400 touch-manipulation"
+                    >
+                      <AlertTriangle className="w-5 h-5" aria-hidden="true" />
+                    </button>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <button
@@ -143,6 +165,16 @@ export default function RefuelingList({ vehicles }: RefuelingListProps) {
                   </button>
                 </div>
               </div>
+
+              {issues.has(refueling.id) && (
+                <div id={`odometer-alert-${refueling.id}`} hidden={expandedAlert !== refueling.id} className="mb-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm text-yellow-200 break-words">
+                  <p className="font-semibold mb-2">Inconsistências de hodômetro</p>
+                  <ul className="list-disc pl-5 space-y-2">
+                    {issues.get(refueling.id)!.map(detail => <li key={detail}>{detail}</li>)}
+                  </ul>
+                  <p className="mt-2">Os valores históricos foram preservados.</p>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <div>

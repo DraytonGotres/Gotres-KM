@@ -23,15 +23,31 @@ export type OdometerRecord = { id: string; date: string; km_previous: number; km
 
 // Não altera históricos: sinaliza diferenças e exige revisão explícita.
 export function historyIssues(records: OdometerRecord[]): string[] {
+  return Array.from(historyIssueDetails(records).keys())
+}
+
+export function historyIssueDetails(records: OdometerRecord[]): Map<string, string[]> {
   const ordered = [...records].sort((a, b) => a.date.localeCompare(b.date) || a.km_current - b.km_current)
-  const issues: string[] = []
+  const issues = new Map<string, string[]>()
+  const km = (value: number) => Number.isFinite(value) ? `${value.toLocaleString('pt-BR')} km` : 'valor inválido'
   ordered.forEach((row, index) => {
-    if (![row.km_previous, row.km_current, row.km_driven].every(Number.isFinite) ||
-        row.km_previous < 0 || row.km_current <= row.km_previous ||
-        Math.abs(row.km_current - row.km_previous - row.km_driven) > 0.011) issues.push(row.id)
-    if (index && Math.abs(row.km_previous - ordered[index - 1].km_current) > 0.011) issues.push(row.id)
+    const details: string[] = []
+    if (![row.km_previous, row.km_current, row.km_driven].every(Number.isFinite)) {
+      details.push(`Hodômetro ou distância inválidos: KM anterior ${km(row.km_previous)}, KM atual ${km(row.km_current)} e KM rodados ${km(row.km_driven)}. Os três valores devem ser números válidos.`)
+    }
+    if (row.km_previous < 0) details.push(`KM anterior negativo: ${km(row.km_previous)}. O hodômetro anterior não pode ser negativo.`)
+    if (row.km_current <= row.km_previous) details.push(`Hodômetro sem avanço: KM atual ${km(row.km_current)} e KM anterior ${km(row.km_previous)}. O atual deve ser maior que o anterior.`)
+    if (Math.abs(row.km_current - row.km_previous - row.km_driven) > 0.011) {
+      details.push(`Distância divergente: ${km(row.km_current)} − ${km(row.km_previous)} = ${km(row.km_current - row.km_previous)}, mas KM rodados registra ${km(row.km_driven)}. A distância deve corresponder à diferença dos hodômetros.`)
+    }
+    const previous = ordered[index - 1]
+    if (previous && Math.abs(row.km_previous - previous.km_current) > 0.011) {
+      const date = previous.date.split('-').reverse().join('/')
+      details.push(`Quebra na sequência: KM anterior deste abastecimento (${km(row.km_previous)}) difere do KM atual do abastecimento precedente, de ${date} (${km(previous.km_current)}). Esses valores devem corresponder; a diferença é de ${km(Math.abs(row.km_previous - previous.km_current))}.`)
+    }
+    if (details.length) issues.set(row.id, details)
   })
-  return Array.from(new Set(issues))
+  return issues
 }
 
 export function validateRefueling(input: { date: string; km_previous: number; km_current: number; liters: number; price_per_liter: number }, records: OdometerRecord[], editingId?: string): string | null {

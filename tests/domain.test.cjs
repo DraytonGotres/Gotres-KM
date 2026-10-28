@@ -3,7 +3,7 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const ts = require('typescript')
 require.extensions['.ts'] = (module, file) => module._compile(ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, file)
-const { localDate, calendarSelection, ratio, numericLabel, historyIssues, validateRefueling } = require('../lib/domain.ts')
+const { localDate, calendarSelection, ratio, numericLabel, historyIssues, historyIssueDetails, validateRefueling } = require('../lib/domain.ts')
 const { authMessage, authRedirect } = require('../lib/auth.ts')
 process.env.TZ = 'America/Fortaleza'
 
@@ -43,6 +43,33 @@ test('inconsistências antigas são sinalizadas sem mutação', () => {
   const before = JSON.stringify(invalid)
   assert.deepEqual(historyIssues(invalid), ['last'])
   assert.equal(JSON.stringify(invalid), before)
+})
+
+test('alertas individuais identificam as três quebras reais sem sinalizar registros corretos', () => {
+  const history = [
+    { id: 'apr', date: '2025-04-25', km_previous: 83397, km_current: 83496, km_driven: 99 },
+    { id: 'may', date: '2025-05-19', km_previous: 83560, km_current: 83595, km_driven: 35 },
+    { id: 'jun6', date: '2025-06-06', km_previous: 83560, km_current: 83682, km_driven: 122 },
+    { id: 'jun13', date: '2025-06-13', km_previous: 83496, km_current: 83560, km_driven: 64 },
+    { id: 'jul', date: '2025-07-09', km_previous: 83560, km_current: 83749, km_driven: 189 },
+  ].reverse()
+  const before = JSON.stringify(history)
+  const details = historyIssueDetails(history)
+  assert.deepEqual([...details.keys()], ['may', 'jun6', 'jun13'])
+  assert.match(details.get('may')[0], /83\.560 km.*25\/04\/2025.*83\.496 km.*64 km/)
+  assert.match(details.get('jun6')[0], /83\.560 km.*19\/05\/2025.*83\.595 km.*35 km/)
+  assert.match(details.get('jun13')[0], /83\.496 km.*06\/06\/2025.*83\.682 km.*186 km/)
+  assert.equal(JSON.stringify(history), before)
+})
+
+test('detalhes cobrem distância divergente, hodômetro inválido e ordem do mesmo dia', () => {
+  assert.equal(historyIssueDetails(rows).size, 0)
+  const details = historyIssueDetails([{ ...rows[0], km_current: 90, km_driven: 5 }]).get('first')
+  assert.equal(details.length, 2)
+  assert.match(details[0], /sem avanço/)
+  assert.match(details[1], /Distância divergente/)
+  assert.match(historyIssueDetails([{ ...rows[0], km_previous: NaN }]).get('first')[0], /valor inválido/)
+  assert.equal(historyIssueDetails(rows.map(row => ({ ...row, date: '2026-10-01' })).reverse()).size, 0)
 })
 test('mensagens Auth e URLs não dependem de credenciais', () => {
   assert.match(authMessage({ code: 'email_not_confirmed' }), /Confirme/)
