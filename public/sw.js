@@ -1,5 +1,5 @@
 // Service Worker para PWA com auto-update
-const CACHE_NAME = 'gotres-km-v2' // Incrementar versão para forçar atualização
+const CACHE_NAME = 'gotres-km-v3' // Incrementar versão para forçar atualização
 const urlsToCache = [
   '/',
   '/manifest.json',
@@ -23,7 +23,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
+          if (cacheName.startsWith('gotres-km-v') && cacheName !== CACHE_NAME) {
             return caches.delete(cacheName)
           }
         })
@@ -37,6 +37,38 @@ self.addEventListener('activate', (event) => {
 
 // Interceptar requisições
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url)
+
+  if (event.request.method === 'GET' &&
+      url.origin === self.location.origin && url.pathname === '/logo.png') {
+    // Consulta a rede sem reutilizar o cache HTTP; mantém a última imagem para offline.
+    const logoResponse = (async () => {
+      let response
+      try {
+        response = await fetch(event.request, { cache: 'no-store' })
+      } catch (error) {
+        const cached = await caches.match(event.request, { cacheName: CACHE_NAME })
+        if (cached) return cached
+        throw error
+      }
+
+      if (response.ok) {
+        try {
+          const cache = await caches.open(CACHE_NAME)
+          await cache.put(event.request, response.clone())
+        } catch (error) {
+          // Uma falha ao gravar o cache não impede exibir a imagem da rede.
+        }
+        return response
+      }
+
+      return (await caches.match(event.request, { cacheName: CACHE_NAME })) || response
+    })()
+
+    event.respondWith(logoResponse)
+    return
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
